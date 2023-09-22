@@ -39,8 +39,11 @@ def direct_run(obj, maxevals, bounds, filepath, correctness_thr, verbose):
 		# save values of the iteration
 		n_iter = int(output[1])
 		f_min = float(output[3])
-		time = float(output[5])
-		f_eval = int(output[8])
+		wall_clock_time = float(output[7])
+		total_cpu_time = float(output[11])
+		cpus_used = int(output[13])
+		mean_cpu_time = float(output[19])
+		f_eval = int(output[22])
 		proc = psutil.Process(int(subprocess.check_output(["pidof", "MATLAB"]).decode("utf-8")))
 		mem_usage_vms = proc.memory_info().vms / 1073741824
 		mem_usage_rss = proc.memory_info().rss / 1073741824
@@ -55,7 +58,7 @@ def direct_run(obj, maxevals, bounds, filepath, correctness_thr, verbose):
 			iter_opt = n_iter
 			f_eval_opt = f_eval
 		
-		log.write_iteration_log(filepath, n_iter, f_min, obj.opt, f_eval, time, (mem_usage_vms, mem_usage_rss) ,verbose)
+		log.write_iteration_log(filepath, n_iter, f_min, obj.opt, f_eval, (wall_clock_time, total_cpu_time, mean_cpu_time), (mem_usage_vms, mem_usage_rss) ,verbose)
 
 	# obtain best value found
 	output = process.stdout.readline()
@@ -77,7 +80,7 @@ def direct_run(obj, maxevals, bounds, filepath, correctness_thr, verbose):
 							f_min, 
 							obj.opt, 
 							f_eval, 
-							time, 
+							(wall_clock_time, total_cpu_time, mean_cpu_time), 
 							obj.input_opt, 
 							x_min, 
 							iter_opt, 

@@ -17,9 +17,13 @@ def init_log_files(filepath):
 				f"Optimum Found{csv_sep} "
 				f"Function Optimum{csv_sep} "
 				f"Objective Function Error{csv_sep} "
-				f"Seconds{csv_sep} "
-				f"Time{csv_sep} "
-				f"Function EvaluationsP{csv_sep} "
+				f"Seconds wall clock{csv_sep} "
+				f"Wall clock time{csv_sep} "
+				f"Seconds CPU time{csv_sep} "
+				f"CPU time{csv_sep} "
+				f"Seconds mean CPU time per core{csv_sep} "
+				f"Time mean CPU time per core{csv_sep} "
+				f"Function Evaluations{csv_sep} "
 				f"VMS ram usage{csv_sep} "
 				f"RSS ram usage\n"
 			)
@@ -39,8 +43,12 @@ def init_log_files(filepath):
 				f"Function Input Optimum{csv_sep} "
 				f"Objective Function Error{csv_sep} "
 				f"Solution Error{csv_sep} "
-				f"Seconds{csv_sep} "
-				f"Time{csv_sep} "
+				f"Seconds wall clock{csv_sep} "
+				f"Wall clock time{csv_sep} "
+				f"Seconds CPU time{csv_sep} "
+				f"CPU time{csv_sep} "
+				f"Seconds mean CPU time per core{csv_sep} "
+				f"Time mean CPU time per core{csv_sep} "
 				f"Function Evaluations{csv_sep} "
 				f"Max VMS ram usage{csv_sep} "
 				f"Max RSS ram usage\n"
@@ -50,16 +58,21 @@ def init_log_files(filepath):
 		f.close()
 
 
-def write_iteration_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, ram_usage, verbose=False):
+def write_iteration_log(filepath, n_iter, f_min, global_f_min, f_eval, execution_time, ram_usage, verbose=False):
 	filepath_log = os.path.join(filepath, "log_iterations.csv")
+	seconds_wall_clock, seconds_cpu_time, seconds_mean_cpu_time = execution_time
 	log_str = (
 				f"{n_iter-1}{csv_sep} "
 				f"{n_iter}{csv_sep} "
 				f"{f_min}{csv_sep} "
 				f"{global_f_min}{csv_sep} "
 				f"{objective_function_error(global_f_min, f_min)}{csv_sep} "
-				f"{seconds}{csv_sep} "
-				f"{time_to_str(seconds)}{csv_sep} "
+				f"{seconds_wall_clock}{csv_sep} "
+				f"{time_to_str(seconds_wall_clock)}{csv_sep} "
+				f"{seconds_cpu_time}{csv_sep} "
+				f"{time_to_str(seconds_cpu_time)}{csv_sep} "
+				f"{seconds_mean_cpu_time}{csv_sep} "
+				f"{time_to_str(seconds_mean_cpu_time)}{csv_sep} "
 				f"{f_eval}{csv_sep} "
 				f"{ram_usage[0]}{csv_sep} "
 				f"{ram_usage[1]}\n"
@@ -72,8 +85,9 @@ def write_iteration_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, 
 		f.write(log_str)
 		f.close()
 
-def write_results_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, input_opt, x_min, iter_opt, f_eval_opt, max_ram_usage, verbose=False):
+def write_results_log(filepath, n_iter, f_min, global_f_min, f_eval, execution_time, input_opt, x_min, iter_opt, f_eval_opt, max_ram_usage, verbose=False):
 	filepath_log = os.path.join(filepath, "log_results.csv")
+	seconds_wall_clock, seconds_cpu_time, seconds_mean_cpu_time = execution_time
 	log_str = (
 				f"{n_iter}{csv_sep} "
 				f"{iter_opt}{csv_sep} "
@@ -84,8 +98,12 @@ def write_results_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, in
 				f"{input_opt}{csv_sep} "
 				f"{objective_function_error(global_f_min, f_min)}{csv_sep} "
 				f"{solution_error(input_opt, x_min)}{csv_sep} "
-				f"{seconds}{csv_sep} "
-				f"{time_to_str(seconds)}{csv_sep} "
+				f"{seconds_wall_clock}{csv_sep} "
+				f"{time_to_str(seconds_wall_clock)}{csv_sep} "
+				f"{seconds_cpu_time}{csv_sep} "
+				f"{time_to_str(seconds_cpu_time)}{csv_sep} "
+				f"{seconds_mean_cpu_time}{csv_sep} "
+				f"{time_to_str(seconds_mean_cpu_time)}{csv_sep} "
 				f"{f_eval}{csv_sep} "
 				f"{max_ram_usage[0]}{csv_sep} "
 				f"{max_ram_usage[1]}\n"	
