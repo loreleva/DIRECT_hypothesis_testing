@@ -1,4 +1,4 @@
-import subprocess, math, os, signal, argparse, sys
+import subprocess, psutil, math, os, signal, argparse, sys
 import sfu.objective_function_class as obj_func
 from memory_profiler import memory_usage
 import write_logs as log
@@ -11,43 +11,58 @@ def direct_run(obj, maxevals, bounds, filepath, correctness_thr, verbose):
 	os.environ["TEST_DIRECT_F_LB"] = str(bounds[0])
 	os.environ["TEST_DIRECT_F_UB"] = str(bounds[1])
 	os.environ["TEST_DIRECT_MAXEVALS"] = str(maxevals)
-
-	comand = ["/usr/local/MATLAB/R2023a/bin/matlab", "-sd", "/home/loreleva/Desktop/DIRECT_test_MATLAB/code", "-batch", "run_DIRECT"]
+	os.environ["TEST_DIRECT_TOL"] = str(correctness_thr)
+	os.environ["TEST_DIRECT_GLOBALMIN"] = str(obj.opt)
+	comand = ["matlab", "-sd", "/home/levantesi/direct_test/code", "-batch", "script_min_x"]
 	process = subprocess.Popen(comand, shell=False, stdout=subprocess.PIPE)
-	max_ram_usage = 0
+	max_ram_usage_vms = 0
+	max_ram_usage_rss = 0
 	iter_opt = ""
 	f_eval_opt = ""
+	idx_file = 0
+	f_min = None
 	while True:
 		# obtain output
 		output = process.stdout.readline()
 		output = output.strip().decode('UTF-8').split()
 
-		# exit when max evals are exceeded
-		if output[0] == "Exceeded":
-			break
 		# log infos during runs
-		if len(output) < 1 or output[0] != "Iter:":
+		if len(output) < 1:
 			continue
-
+		if output[0] == "Minima":
+			f_min = float(output[-1])
+			break
+		if output[0] == "Exceeded" or output[0] == "Minima":
+			break
+		if output[0] != "Iter:":
+			continue
 		# save values of the iteration
 		n_iter = int(output[1])
 		f_min = float(output[3])
 		time = float(output[5])
 		f_eval = int(output[8])
-		mem_usage = memory_usage(process.pid, max_usage=True)
-		if mem_usage > max_ram_usage:
-			max_ram_usage = mem_usage
+		proc = psutil.Process(int(subprocess.check_output(["pidof", "MATLAB"]).decode("utf-8")))
+		mem_usage_vms = proc.memory_info().vms / 1073741824
+		mem_usage_rss = proc.memory_info().rss / 1073741824
+		
+		if mem_usage_vms > max_ram_usage_vms:
+			max_ram_usage_vms = mem_usage_vms
+
+		if mem_usage_rss > max_ram_usage_rss:
+			max_ram_usage_rss = mem_usage_rss
 
 		if iter_opt == "" and objective_function_error(obj.opt, f_min) <= correctness_thr:
 			iter_opt = n_iter
 			f_eval_opt = f_eval
-		log.write_iteration_log(filepath, n_iter, f_min, obj.opt, f_eval, time, verbose)
+		
+		log.write_iteration_log(filepath, n_iter, f_min, obj.opt, f_eval, time, (mem_usage_vms, mem_usage_rss) ,verbose)
 
 	# obtain best value found
 	output = process.stdout.readline()
 	output = output.strip().decode('UTF-8').split()
 
-	f_min = float(output[0])
+	if f_min == None:
+		f_min = float(output[0])
 
 	x_min = []
 	while len(x_min) < obj.dimension:
@@ -58,9 +73,18 @@ def direct_run(obj, maxevals, bounds, filepath, correctness_thr, verbose):
 			continue
 		else:
 			x_min.append(float(output[0]))
-
-	log.write_results_log(filepath, n_iter, f_min, obj.opt, f_eval, time, max_ram_usage, obj.input_opt, x_min, iter_opt, f_eval_opt, verbose)
-
+	log.write_results_log(filepath, n_iter, 
+							f_min, 
+							obj.opt, 
+							f_eval, 
+							time, 
+							obj.input_opt, 
+							x_min, 
+							iter_opt, 
+							f_eval_opt, 
+							(max_ram_usage_vms, max_ram_usage_rss),
+							verbose
+						)
 
 def main(argv):
 	# define parser and pars arguments
@@ -69,6 +93,7 @@ def main(argv):
 	parser.add_argument("--dimensions", "-d", type=int, nargs="+", help="explicitly define dimensions on which perform the tests")
 	parser.add_argument("--bounds", "-b", type=float, nargs=2, help="define bounds of the feasible domain of the objective function")
 	parser.add_argument("--verbose", "-v", action="store_true")
+	parser.add_argument("--max_evals", type=int, nargs=1, required=True, help="maximum number of function evaluations for DIRECT")
 	args = parser.parse_args()
 
 	# init logs dir
@@ -106,9 +131,9 @@ def main(argv):
 
 		log.init_log_files(path_dir_log_file)
 		
-		f_eval = 10*10**6
+		f_eval = args.max_evals
 
-		# rerun DIRECT to obtain x min
+                # rerun DIRECT to obtain x min
 		direct_run(obj, f_eval, args.bounds, path_dir_log_file, 1e-6, args.verbose)
 
 if __name__ == "__main__":

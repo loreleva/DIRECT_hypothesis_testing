@@ -19,7 +19,9 @@ def init_log_files(filepath):
 				f"Objective Function Error{csv_sep} "
 				f"Seconds{csv_sep} "
 				f"Time{csv_sep} "
-				f"Function Evaluations\n"
+				f"Function EvaluationsP{csv_sep} "
+				f"VMS ram usage{csv_sep} "
+				f"RSS ram usage\n"
 			)
 	with open(filepath_log, "w") as f:
 		f.write(header)
@@ -40,14 +42,15 @@ def init_log_files(filepath):
 				f"Seconds{csv_sep} "
 				f"Time{csv_sep} "
 				f"Function Evaluations{csv_sep} "
-				f"Max ram usage\n"
+				f"Max VMS ram usage{csv_sep} "
+				f"Max RSS ram usage\n"
 			)
 	with open(filepath_log, "w") as f:
 		f.write(header)
 		f.close()
 
 
-def write_iteration_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, verbose=False):
+def write_iteration_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, ram_usage, verbose=False):
 	filepath_log = os.path.join(filepath, "log_iterations.csv")
 	log_str = (
 				f"{n_iter-1}{csv_sep} "
@@ -57,7 +60,9 @@ def write_iteration_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, 
 				f"{objective_function_error(global_f_min, f_min)}{csv_sep} "
 				f"{seconds}{csv_sep} "
 				f"{time_to_str(seconds)}{csv_sep} "
-				f"{f_eval}\n"
+				f"{f_eval}{csv_sep} "
+				f"{ram_usage[0]}{csv_sep} "
+				f"{ram_usage[1]}\n"
 			)
 
 	if verbose:
@@ -67,7 +72,7 @@ def write_iteration_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, 
 		f.write(log_str)
 		f.close()
 
-def write_results_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, ram_usage, input_opt, x_min, iter_opt, f_eval_opt, verbose=False):
+def write_results_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, input_opt, x_min, iter_opt, f_eval_opt, max_ram_usage, verbose=False):
 	filepath_log = os.path.join(filepath, "log_results.csv")
 	log_str = (
 				f"{n_iter}{csv_sep} "
@@ -82,7 +87,8 @@ def write_results_log(filepath, n_iter, f_min, global_f_min, f_eval, seconds, ra
 				f"{seconds}{csv_sep} "
 				f"{time_to_str(seconds)}{csv_sep} "
 				f"{f_eval}{csv_sep} "
-				f"{ram_usage}\n"	
+				f"{max_ram_usage[0]}{csv_sep} "
+				f"{max_ram_usage[1]}\n"	
 			)
 
 	if verbose:
